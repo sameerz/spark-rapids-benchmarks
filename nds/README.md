@@ -25,8 +25,13 @@ You may not use NDS except in compliance with the Apache License, Version 2.0 an
     sudo locale-gen en_US.UTF-8
     sudo apt install openjdk-8-jdk-headless gcc make flex bison byacc maven
     ```
+3. Install and set up SPARK. 
+    - Download latest distro from [here](https://spark.apache.org/downloads.html)
+    - Preferably >= 3.4
+    - Find and note SPARK_HOME ( /DOWNLOAD/LOCATION/spark-<3.4.1>-bin-hadoop3 )
 
-3. TPC-DS Tools
+
+4. TPC-DS Tools
 
     User must download TPC-DS Tools from [official TPC website](https://www.tpc.org/tpc_documents_current_versions/current_specifications5.asp). The tool will be downloaded as a zip package with a random guid string prefix.
     After unzipping it, a folder called `DSGen-software-code-3.2.0rc1` will be seen.
@@ -141,6 +146,8 @@ The utility requires a pre-defined [template file](./convert_submit_gpu.template
 necessary Spark configurations. Either user can submit the `nds_transcode.py` directly to spark with
 arbitrary Spark parameters.
 
+CSV is the default input format for data conversion, it can be overridden by `--input_format`.
+
 Parquet, Orc, Avro, JSON and Iceberg are supported for output data format at present with CPU. For GPU conversion,
 only Parquet and Orc are supported.
 
@@ -171,7 +178,8 @@ Arguments for `nds_transcode.py`:
 
 ```bash
 python nds_transcode.py -h
-usage: nds_transcode.py [-h] [--output_mode {overwrite,append,ignore,error,errorifexists}] [--output_format {parquet,orc,avro,json,iceberg,delta}] [--tables TABLES] [--log_level LOG_LEVEL] [--floats] [--update] [--iceberg_write_format {parquet,orc,avro}] [--compression COMPRESSION] [--delta_unmanaged] [--hive]
+usage: nds_transcode.py [-h] [--output_mode {overwrite,append,ignore,error,errorifexists}] [--input_format {csv,parquet,orc,avro,json}] [--output_format {parquet,orc,avro,json,iceberg,delta}] [--tables TABLES] [--log_level LOG_LEVEL] [--floats] [--update]
+                        [--iceberg_write_format {parquet,orc,avro}] [--compression COMPRESSION] [--delta_unmanaged] [--hive] [--database DATABASE]
                         input_prefix output_prefix report_file
 
 positional arguments:
@@ -185,6 +193,8 @@ optional arguments:
   -h, --help            show this help message and exit
   --output_mode {overwrite,append,ignore,error,errorifexists}
                         save modes as defined by https://spark.apache.org/docs/latest/sql-data-sources-load-save-functions.html#save-modes.default value is errorifexists, which is the Spark default behavior.
+  --input_format {csv,parquet,orc, avro, json}
+                        input data format to be converted. default value is csv.
   --output_format {parquet,orc,avro,json,iceberg,delta}
                         output data format when converting CSV data sources.
   --tables TABLES       specify table names by a comma separated string. e.g. 'catalog_page,catalog_sales'.
@@ -200,6 +210,7 @@ optional arguments:
   --delta_unmanaged     Use unmanaged tables for DeltaLake. This is useful for testing DeltaLake without leveraging a
                         Metastore service
   --hive                create Hive external tables for the converted data.
+  --database DATABASE   the name of a database to use instead of `default`, currently applies only to Hive
 ```
 
 Example command to submit via `spark-submit-template` utility:
@@ -510,5 +521,12 @@ usage: python nds_bench.py [-h] yaml_config
 positional arguments:
   yaml_config  yaml config file for the benchmark
 ```
+
+NOTE: For Throughput Run, user should create a new template file based on the one used for Power Run.
+The only difference between them is that the template for Throughput Run should limit the compute resource
+based on the number of streams used in the Throughput Run.
+For instance: 4 concurrent streams in one Throughput run and the total available cores in the benchmark cluster
+are 1024. Then in the template, `spark.cores.max` should be set to `1024/4=256` so that each stream will have
+compute resource evenly.
 
 ### NDS2.0 is using source code from TPC-DS Tool V3.2.0

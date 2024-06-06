@@ -1,4 +1,4 @@
-# Copyright (c) 2022, NVIDIA CORPORATION.
+# Copyright (c) 2024, NVIDIA CORPORATION.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,23 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# A workflow to check if PR got sign-off
-name: signoff check
+name: Add new issues and pull requests to project
 
 on:
+  issues:
+    types:
+      - opened
   pull_request_target:
-    types: [opened, synchronize, reopened]
+    types:
+      - opened
 
 jobs:
-  signoff-check:
+  add-to-project:
+    if: github.repository == 'NVIDIA/spark-rapids-benchmarks'
+    name: Add new issues and pull requests to project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/add-to-project@v0.6.1
+        with:
+          project-url: https://github.com/orgs/NVIDIA/projects/4
+          github-token: ${{ secrets.PROJECT_TOKEN }}
 
-      - name: sigoff-check job
-        uses: ./.github/workflows/signoff-check
-        env:
-          OWNER: NVIDIA
-          REPO_NAME: spark-rapids-benchmarks
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PULL_NUMBER: ${{ github.event.number }}
